@@ -2,11 +2,14 @@ const { CommandType } = require("wokcommands");
 const fs = require("fs");
 
 const data = require("./../config.json");
+const { PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
 	// Required for slash commands
 	description: "add a monitor",
 
+	guildOnly: true,
+	permissions: [PermissionFlagsBits.Administrator],
 	// Create a legacy and slash command
 	type: CommandType.SLASH,
 	options: [
