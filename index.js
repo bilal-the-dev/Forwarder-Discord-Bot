@@ -21,9 +21,6 @@ const client = new Client({
 });
 
 client.on("ready", async () => {
-	// await mongoose.connect(
-	// 	"mongodb+srv://benluka:ihackedwifi240@cluster0.hhpyoj3.mongodb.net/?retryWrites=true&w=majority",
-	// );
 	console.log(`${client.user.username} is running 🥗`);
 
 	const { DefaultCommands } = WOK;
