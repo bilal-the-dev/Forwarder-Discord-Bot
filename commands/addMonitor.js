@@ -3,6 +3,7 @@ const fs = require("fs");
 
 const data = require("./../config.json");
 const { PermissionFlagsBits } = require("discord.js");
+const { findMonitor } = require("../utils/config");
 
 module.exports = {
 	// Required for slash commands
@@ -13,6 +14,12 @@ module.exports = {
 	// Create a legacy and slash command
 	type: CommandType.SLASH,
 	options: [
+		{
+			name: "monitor_name",
+			description: "a unique monitor name",
+			type: 3,
+			required: true,
+		},
 		{
 			name: "source_channel",
 			description: "channel where message will be sent",
@@ -54,11 +61,17 @@ module.exports = {
 
 			const sourceChannel = options.getChannel("source_channel");
 
+			const monitorName = options.getString("monitor_name");
 			const name = options.getString("name");
 			const yearStr = options.getString("year_frame");
 			const miles = options.getInteger("target_miles");
 
 			const milesRange = options.getString("miles_range") ?? "lessThan";
+
+			const isMonitorExist = findMonitor(monitorName);
+
+			if (isMonitorExist !== -1)
+				throw new Error("A monitor with that name already exists");
 
 			if (!name && !yearStr && !miles)
 				throw new Error("Please select at least one filter");
@@ -78,13 +91,14 @@ module.exports = {
 				yearFrame = [start, end];
 			}
 
-			data.filter = {
+			data.push({
+				monitorName: monitorName,
 				source: sourceChannel.id,
 				...(name && { name }),
 				...(yearStr && { yearFrame }),
 				...(miles && { miles }),
 				milesRange,
-			};
+			});
 
 			fs.writeFileSync("./config.json", JSON.stringify(data));
 

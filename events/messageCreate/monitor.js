@@ -9,72 +9,88 @@ module.exports = async (message) => {
 
 		if (parentId !== process.env.CATEGORY_MONITORING_ID) return;
 
-		const {
-			filter: { name, yearFrame, miles, source },
-		} = data;
+		let sourceChId;
 
+		const allFilters = [];
 		console.log("w");
-		const titleRegex = /\*\*(Title|Y-M-M):\*\*\s*(.*?)\n/;
-		// const priceRegex = /\*\*Price:\*\*\s*\$?(\d+(?:,\d{3})*)/;
-		const milesRegex =
-			/\*\*(Miles-Age|Mileage|Miles):\*\*\s*([\d,]+(?:\.\d+)?)/;
 
-		const filters = [];
+		for (const filter of data) {
+			const { name, yearFrame, miles, milesRange, source } = filter;
 
-		if (name) {
-			const match = matchRegex(titleRegex);
+			const titleRegex = /\*\*(Title|Y-M-M):\*\*\s*(.*?)\n/;
+			// const priceRegex = /\*\*Price:\*\*\s*\$?(\d+(?:,\d{3})*)/;
+			const milesRegex =
+				/\*\*(Miles-Age|Mileage|Miles):\*\*\s*([\d,]+(?:\.\d+)?)/;
 
-			if (match) {
-				if (match[2].toLowerCase().includes(name.toLowerCase()))
-					filters.push(true);
-				else filters.push(false);
-			}
-		}
+			const filters = [];
 
-		if (yearFrame) {
-			const match = matchRegex(titleRegex);
+			if (name) {
+				const match = matchRegex(titleRegex);
 
-			if (match) {
-				const yearsArray = [];
-
-				for (let year = yearFrame[0]; year <= yearFrame[1]; year++) {
-					yearsArray.push(year);
+				if (match) {
+					if (match[2].toLowerCase().includes(name.toLowerCase()))
+						filters.push(true);
+					else filters.push(false);
 				}
-
-				const isYearFound = yearsArray.some((year) => match[2].includes(year));
-
-				if (isYearFound) filters.push(true);
-				else filters.push(false);
 			}
-		}
 
-		if (miles) {
-			const match = matchRegex(milesRegex);
+			if (yearFrame) {
+				const match = matchRegex(titleRegex);
 
-			if (match) {
-				let miles = +match[2].replace(/,/g, "");
-				if (id === process.env.FACEBOOK_CHANNEL_ID) miles *= 1000;
+				if (match) {
+					const yearsArray = [];
 
-				const func = obj[milesRange];
+					for (let year = yearFrame[0]; year <= yearFrame[1]; year++) {
+						yearsArray.push(year);
+					}
 
-				if (func(miles, miles)) filters.push(true);
-				else filters.push(false);
+					const isYearFound = yearsArray.some((year) =>
+						match[2].includes(year),
+					);
+
+					if (isYearFound) filters.push(true);
+					else filters.push(false);
+				}
 			}
+
+			if (miles) {
+				const match = matchRegex(milesRegex);
+
+				if (match) {
+					let miles = +match[2].replace(/,/g, "");
+					if (id === process.env.FACEBOOK_CHANNEL_ID) miles *= 1000;
+
+					const func = obj[milesRange];
+
+					if (func(miles, miles)) filters.push(true);
+					else filters.push(false);
+				}
+			}
+
+			function matchRegex(regex) {
+				const match = text.match(regex);
+
+				if (match) return match;
+
+				if (!match) filters.push(false);
+			}
+
+			console.log(filter);
+			const hasCrossedFilters = filters.every((filter) => filter);
+
+			if (hasCrossedFilters) {
+				allFilters.push(true);
+				sourceChId = source;
+			}
+			if (!hasCrossedFilters) allFilters.push(false);
 		}
 
-		function matchRegex(regex) {
-			const match = text.match(regex);
+		console.log(allFilters);
 
-			if (match) return match;
+		const hasMatchedOneFilter = allFilters.some((filter) => filter);
+		if (!hasMatchedOneFilter) return;
 
-			if (!match) filters.push(false);
-		}
-
-		const hasCrossedFilters = filters.every((filter) => filter);
-
-		if (!hasCrossedFilters) return;
-
-		const channel = await guild.channels.fetch(source);
+		const channel = await guild.channels.fetch(sourceChId);
 		await channel.send(text);
 	} catch (error) {
 		console.log(error);
