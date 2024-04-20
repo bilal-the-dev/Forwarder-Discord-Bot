@@ -12,7 +12,6 @@ module.exports = async (message) => {
 		let sourceChId;
 
 		const allFilters = [];
-		console.log("w");
 
 		for (const filter of data) {
 			const { name, yearFrame, miles, milesRange, source } = filter;
@@ -57,12 +56,12 @@ module.exports = async (message) => {
 				const match = matchRegex(milesRegex);
 
 				if (match) {
-					let miles = +match[2].replace(/,/g, "");
-					if (id === process.env.FACEBOOK_CHANNEL_ID) miles *= 1000;
+					let foundMiles = +match[2].replace(/,/g, "");
+					if (id === process.env.FACEBOOK_CHANNEL_ID) foundMiles *= 1000;
 
 					const func = obj[milesRange];
 
-					if (func(miles, miles)) filters.push(true);
+					if (func(miles, foundMiles)) filters.push(true);
 					else filters.push(false);
 				}
 			}
@@ -75,7 +74,6 @@ module.exports = async (message) => {
 				if (!match) filters.push(false);
 			}
 
-			console.log(filter);
 			const hasCrossedFilters = filters.every((filter) => filter);
 
 			if (hasCrossedFilters) {
@@ -84,8 +82,6 @@ module.exports = async (message) => {
 			}
 			if (!hasCrossedFilters) allFilters.push(false);
 		}
-
-		console.log(allFilters);
 
 		const hasMatchedOneFilter = allFilters.some((filter) => filter);
 		if (!hasMatchedOneFilter) return;
